@@ -1,0 +1,63 @@
+# Specifies working directory for analysis. All paths in the rest of the file are relative to this.
+working_dir: /pathosy01/disk1/home/jocfng/STADCOADUCEC/COAD/pyclone/TCGA-G4-6299
+# Where the trace (output) from the PyClone MCMC analysis will be written.
+trace_dir: trace
+
+# Specifies which density will be used to model read counts. Most people will want pyclone_beta_binomial or pyclone_binomial
+density: pyclone_beta_binomial
+
+# Beta-Binomial precision (alpha + beta) prior
+beta_binomial_precision_params:
+  # Starting value
+  value: 1000
+  
+  # Parameters for Gamma prior distribution
+  prior:
+    shape: 1.0
+    rate: 0.0001
+  
+  # Precision of Gamma proposal function for MH step
+  proposal:
+    precision: 0.01 
+
+binomial_precision_params:
+  # Starting value
+  value: 1000
+  
+  # Parameters for Gamma prior distribution
+  prior:
+    shape: 1.0
+    rate: 0.0001
+  
+  # Precision of Gamma proposal function for MH step
+  proposal:
+    precision: 0.01 
+
+# Number of iterations of the MCMC chain.
+num_iters: 10000
+
+# Specifies parameters in Beta base measure for DP. Most people will want the values below.
+base_measure_params:
+  alpha: 1
+  beta: 1
+
+# Specifies initial values and prior parameters for the prior on the concentration (alpha) parameter in the DP. If the prior node is not set the concentration will not be estimated and the specified value will be used.
+concentration:
+  # Initial value if prior is set, or fixed value otherwise for concentration parameter.
+  value: 1.0
+
+  # Specifies the parameters in the Gamma prior over the concentration parameter.
+  prior:
+    shape: 1.0
+    rate: 0.001
+
+samples:
+  # Unique sample ID
+  TCGA-G4-6299:
+    mutations_file: TCGA-G4-6299.yaml
+    tumour_content:
+      # The predicted tumour content for the sample. If you have no estimate set this to 1.0.
+      value: 1
+
+    # Expected sequencing error rate for sample
+    error_rate: 0.001

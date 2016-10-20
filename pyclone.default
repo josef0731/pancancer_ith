@@ -1,0 +1,42 @@
+#!/bin/bash
+#PBS -N HKU66pyclone
+#PBS -l nodes=1:ppn=1
+#PBS -l mem=25gb
+#PBS -l walltime=64:00:00
+#PBS -q large
+cd $PBS_O_WORKDIR
+
+while read CASE rank
+do
+	echo $CASE
+	maf=`echo $CASE`T.maf
+	segdat=`echo $CASE`_oncosnp.txt
+	mkdir pyclone/$CASE
+	cd maf
+	perl $HOME/vcf2maf/maf2vcf.pl --input-maf $maf --output-dir ../vcf --ref-fasta $HOME/vep/homo_sapiens/82_GRCh37/human_g1k_v37.fasta.gz
+	cd ../vcf
+	vcf="`echo $CASE`T.vcf"
+	Rscript append_read_depth.R $vcf --no-save --no-restore
+	cd ..
+	append="APPENDED_`echo $CASE`T.vcf"
+	cp vcf/$append pyclone/$CASE/$append
+	cp pyclone-parser.py pyclone/$CASE/pyclone-parser.py
+	cp pyclone-yaml-parser.py pyclone/$CASE/pyclone-yaml-parser.py
+	cp pyclone-config.yaml pyclone/$CASE/pyclone-config.yaml
+	cp oncosnp/cnv/$segdat pyclone/$CASE/$segdat
+	cd pyclone/$CASE
+	python pyclone-parser.py $CASE
+	python pyclone-yaml-parser.py $CASE
+	python ~/pyclone-0.12.9/PyClone build_mutations_file --ref_prior normal --var_prior parental_copy_number pyclone.mutation.tsv `echo $CASE`.yaml
+	python ~/pyclone-0.12.9/PyClone analyse pyclone-config.yaml
+	cp ../../pyclone-cluster.R trace/
+	cd trace/
+	bzip2 -d labels.tsv.bz2
+	$HOME/R/bin/R CMD BATCH --no-save --no-restore pyclone-cluster.R
+	mv `echo $CASE`.cellular_frequencies.tsv.bz2 cellular.frequencies.tsv.bz2
+	bzip2 -d cellular.frequencies.tsv.bz2
+	cp ../../../pyclone-post-processing.R pyclone-post-processing.R
+	$HOME/R/bin/R CMD BATCH --no-save --no-restore pyclone-post-processing.R
+	cd ../../..
+done < "caselist.txt"
+
